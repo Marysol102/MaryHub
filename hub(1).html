@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Juegos</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Schoolbell&family=Cinzel+Decorative:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body, html { width: 100%; height: 100%; overflow: hidden; }
+
+  .hub {
+    width: 100%; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  .section {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: flex 0.5s cubic-bezier(.4,0,.2,1);
+    text-decoration: none;
+  }
+  .section:hover { flex: 1.4; }
+
+  .text-block {
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    position: relative; z-index: 2;
+  }
+
+  .arrow {
+    position: absolute; right: 36px;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2;
+  }
+  .section:hover .arrow { opacity: 1; transform: translateX(8px); }
+
+  /* ══════════════════════════════
+     FLASH OVERLAY (click transition)
+  ══════════════════════════════ */
+  .flash-overlay {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 999;
+    opacity: 0;
+  }
+
+  /* ══════════════════════════════
+     HIDDEN CODES
+  ══════════════════════════════ */
+  .hidden-codes {
+    background: #020b18;
+    border-bottom: 2px solid #00ffe7;
+  }
+
+  .hidden-codes .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,231,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,231,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transition: opacity 0.4s;
+  }
+  .hidden-codes:hover .grid-bg { opacity: 2; background-image:
+    linear-gradient(rgba(0,255,231,0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,231,0.13) 1px, transparent 1px); }
+
+  .hidden-codes .scanline {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* Línea de barrido */
+  .scan-sweep {
+    position: absolute; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #00ffe7, transparent);
+    box-shadow: 0 0 18px 4px rgba(0,255,231,0.5);
+    animation: sweep 4s linear infinite;
+    opacity: 0.7;
+  }
+  @keyframes sweep {
+    0%   { top: -4px; }
+    100% { top: 100%; }
+  }
+
+  .hidden-codes .glow-ring {
+    position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    border: 1px solid rgba(0,255,231,0.18);
+    box-shadow: 0 0 50px rgba(0,255,231,0.08);
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0%,100% { transform: scale(1); opacity: 0.4; }
+    50%      { transform: scale(1.08); opacity: 1; }
+  }
+
+  .hc-ambient {
+    position: absolute;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 4px;
+    color: rgba(0,255,231,0.15);
+    user-select: none; cursor: default;
+  }
+
+  .hidden-codes .title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(20px, 3.5vw, 42px);
+    font-weight: 900; color: #00ffe7;
+    text-shadow: 0 0 20px #00ffe7, 0 0 50px rgba(0,255,231,0.4);
+    letter-spacing: 0.35em;
+  }
+  .hidden-codes .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(9px, 1.1vw, 13px);
+    color: rgba(0,255,231,0.45); letter-spacing: 0.45em;
+    margin-top: 10px;
+  }
+  .cursor { animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .hidden-codes .arrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px; color: #00ffe7;
+    text-shadow: 0 0 10px #00ffe7;
+  }
+
+  /* ══════════════════════════════
+     LETRARIO
+  ══════════════════════════════ */
+  .letrario {
+    background: #140800;
+    border-bottom: 2px solid #5c1010;
+  }
+
+  .letrario .parchment {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 50%, rgba(139,26,26,0.2) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 50%, rgba(180,120,0,0.12) 0%, transparent 55%);
+    transition: opacity 0.4s;
+  }
+  .letrario:hover .parchment {
+    background:
+      radial-gradient(ellipse at 15% 50%, rgba(139,26,26,0.38) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 50%, rgba(180,120,0,0.25) 0%, transparent 55%);
+  }
+
+  .letrario .runes {
+    position: absolute;
+    font-size: 20px; letter-spacing: 10px;
+    color: rgba(212,175,55,0.1); user-select: none;
+  }
+  .letrario .ornament {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 16px; letter-spacing: 6px;
+    color: rgba(139,26,26,0.35); user-select: none;
+  }
+
+  .letrario .title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(22px, 4vw, 52px);
+    font-weight: 900; color: #d4af37;
+    text-shadow: 0 0 30px rgba(212,175,55,0.45), 2px 2px 6px #000;
+    letter-spacing: 0.1em;
+    animation: flicker 6s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%,100%   { opacity: 1;    text-shadow: 0 0 30px rgba(212,175,55,0.45), 2px 2px 6px #000; }
+    92%        { opacity: 1;    text-shadow: 0 0 30px rgba(212,175,55,0.45), 2px 2px 6px #000; }
+    93%        { opacity: 0.6;  text-shadow: 0 0 10px rgba(212,175,55,0.2); }
+    94%        { opacity: 1;    text-shadow: 0 0 30px rgba(212,175,55,0.45), 2px 2px 6px #000; }
+    96%        { opacity: 0.75; text-shadow: 0 0 15px rgba(212,175,55,0.3); }
+    97%        { opacity: 1;    text-shadow: 0 0 30px rgba(212,175,55,0.45), 2px 2px 6px #000; }
+  }
+
+  .letrario .subtitle {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(7px, 0.9vw, 11px);
+    color: rgba(212,175,55,0.4); letter-spacing: 0.3em;
+    margin-top: 8px;
+  }
+  .letrario .arrow { font-size: 28px; color: #d4af37; }
+
+  /* Partículas Letrario */
+  .particle {
+    position: absolute;
+    width: 3px; height: 3px; border-radius: 50%;
+    background: #d4af37;
+    pointer-events: none; user-select: none;
+    animation: float-particle linear infinite;
+    opacity: 0;
+  }
+  @keyframes float-particle {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.7; }
+    90%  { opacity: 0.4; }
+    100% { transform: translateY(-80px) translateX(var(--dx)); opacity: 0; }
+  }
+
+  /* ══════════════════════════════
+     FORMAS
+  ══════════════════════════════ */
+  .formas { background: #f2ece0; }
+
+  .formas .paper-lines {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 28px,
+      rgba(44,44,110,0.06) 28px, rgba(44,44,110,0.06) 29px
+    );
+    transition: opacity 0.4s;
+  }
+  .formas:hover .paper-lines { opacity: 1.5; }
+  .formas:hover { background: #ede5d0; }
+
+  .shape-deco {
+    position: absolute; opacity: 0.1;
+  }
+
+  .formas .title {
+    font-family: 'Schoolbell', cursive;
+    font-size: clamp(24px, 4vw, 50px);
+    color: #2c2c6e; letter-spacing: 0.05em;
+    white-space: nowrap;
+    border-right: 3px solid #2c2c6e;
+    animation: cursor-blink 0.8s step-end infinite;
+    min-width: 1px;
+  }
+  @keyframes cursor-blink {
+    0%,100% { border-color: #2c2c6e; }
+    50%      { border-color: transparent; }
+  }
+
+  .formas .subtitle {
+    font-family: 'Schoolbell', cursive;
+    font-size: clamp(9px, 1.1vw, 13px);
+    color: rgba(44,44,110,0.4); letter-spacing: 0.25em;
+    margin-top: 8px;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+
+  .formas .arrow { font-size: 26px; color: #2c2c6e; }
+
+  /* Rotación lenta de figuras */
+  .rot-slow { animation: rotate-slow 30s linear infinite; transform-origin: center center; }
+  .rot-slow-r { animation: rotate-slow-r 25s linear infinite; transform-origin: center center; }
+  @keyframes rotate-slow   { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
+  @keyframes rotate-slow-r { from{transform:rotate(0deg)}   to{transform:rotate(-360deg)} }
+
+</style>
+</head>
+<body>
+
+<!-- Flash overlay para transición de click -->
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<div class="hub">
+
+  <!-- ══ HIDDEN CODES ══ -->
+  <a class="section hidden-codes" id="link-hc" href="https://is.gd/M4ryS0L" target="_blank">
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+    <div class="scan-sweep"></div>
+    <div class="glow-ring"></div>
+    <div class="hc-ambient" id="amb1" style="top:18%;left:4%">7 · 3 · 1 · 9 · 4 · 2</div>
+    <div class="hc-ambient" id="amb2" style="top:62%;left:3%">■ □ ■ □ □ ■ □ ■</div>
+    <div class="hc-ambient" id="amb3" style="top:25%;right:5%">0x4F · 0xA2 · 0x11</div>
+    <div class="hc-ambient" id="amb4" style="bottom:20%;right:4%">≠ ≡ ∅ ∞ ≥</div>
+    <div class="text-block">
+      <div class="title">HIDDEN CODES<span class="cursor">_</span></div>
+      <div class="subtitle">DESCIFRA · DEDUCE · DESCUBRE</div>
+    </div>
+    <div class="arrow">▶</div>
+  </a>
+
+  <!-- ══ LETRARIO ══ -->
+  <a class="section letrario" id="link-lt" href="https://is.gd/Letrario" target="_blank">
+    <div class="parchment"></div>
+    <div class="runes" style="top:12%;left:3%">ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ</div>
+    <div class="runes" style="bottom:12%;right:3%">ᛁ ᛃ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ</div>
+    <div class="ornament" style="left:6%">✦ ✧ ✦</div>
+    <div class="ornament" style="right:6%">✦ ✧ ✦</div>
+    <div id="particles-container"></div>
+    <div class="text-block">
+      <div class="title">Letrario</div>
+      <div class="subtitle">CONJURA · DESCIFRA · INVOCA</div>
+    </div>
+    <div class="arrow">⟩</div>
+  </a>
+
+  <!-- ══ FORMAS ══ -->
+  <a class="section formas" id="link-fm" href="https://is.gd/Shapes" target="_blank">
+    <div class="paper-lines"></div>
+
+    <!-- Círculo naranja -->
+    <svg class="shape-deco rot-slow" style="left:5%;top:5%;width:90px;height:90px" viewBox="0 0 90 90">
+      <circle cx="45" cy="45" r="38" fill="none" stroke="#e05a2b" stroke-width="4"/>
+    </svg>
+    <!-- Triángulo azul -->
+    <svg class="shape-deco rot-slow-r" style="right:7%;top:4%;width:90px;height:90px" viewBox="0 0 90 90">
+      <polygon points="45,6 84,78 6,78" fill="none" stroke="#2c2c6e" stroke-width="4"/>
+    </svg>
+    <!-- Cuadrado verde -->
+    <svg class="shape-deco rot-slow" style="left:10%;bottom:6%;width:70px;height:70px" viewBox="0 0 70 70">
+      <rect x="5" y="5" width="60" height="60" fill="none" stroke="#2a9e4f" stroke-width="4"/>
+    </svg>
+    <!-- Círculo relleno pequeño -->
+    <svg class="shape-deco rot-slow-r" style="right:4%;bottom:10%;width:50px;height:50px" viewBox="0 0 50 50">
+      <circle cx="25" cy="25" r="20" fill="#e05a2b"/>
+    </svg>
+    <!-- Cuadradito extra -->
+    <svg class="shape-deco rot-slow" style="left:52%;top:4%;width:36px;height:36px;opacity:0.07" viewBox="0 0 36 36">
+      <rect x="3" y="3" width="30" height="30" fill="none" stroke="#2c2c6e" stroke-width="3"/>
+    </svg>
+
+    <div class="text-block">
+      <div class="title" id="formas-title"></div>
+      <div class="subtitle">OBSERVA · COLOCA · RESUELVE</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+</div>
+
+<script>
+  // ─── WEB AUDIO (sonidos hover) ───────────────────────────────────────
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let ctx = null;
+
+  function getCtx() {
+    if (!ctx) ctx = new AudioCtx();
+    return ctx;
+  }
+
+  function playHiddenCodesSound() {
+    const c = getCtx();
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.connect(gain); gain.connect(c.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(880, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1400, c.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.18);
+    osc.start(); osc.stop(c.currentTime + 0.18);
+  }
+
+  function playLetrarioSound() {
+    const c = getCtx();
+    const freqs = [261, 329, 392, 523];
+    freqs.forEach((f, i) => {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.connect(gain); gain.connect(c.destination);
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const t = c.currentTime + i * 0.07;
+      gain.gain.setValueAtTime(0.07, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      osc.start(t); osc.stop(t + 0.25);
+    });
+  }
+
+  function playFormasSound() {
+    const c = getCtx();
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.connect(gain); gain.connect(c.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(659, c.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.07, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.2);
+    osc.start(); osc.stop(c.currentTime + 0.2);
+  }
+
+  // ─── HOVER SOUNDS ────────────────────────────────────────────────────
+  document.getElementById('link-hc').addEventListener('mouseenter', playHiddenCodesSound);
+  document.getElementById('link-lt').addEventListener('mouseenter', playLetrarioSound);
+  document.getElementById('link-fm').addEventListener('mouseenter', playFormasSound);
+
+  // ─── CLICK FLASH TRANSITION ──────────────────────────────────────────
+  function flashAndGo(e, color, url) {
+    e.preventDefault();
+    const overlay = document.getElementById('flashOverlay');
+    overlay.style.background = color;
+    overlay.style.transition = 'opacity 0.15s ease';
+    overlay.style.opacity = '1';
+    setTimeout(() => {
+      overlay.style.transition = 'opacity 0.3s ease';
+      overlay.style.opacity = '0';
+      window.open(url, '_blank');
+    }, 180);
+  }
+
+  document.getElementById('link-hc').addEventListener('click', e =>
+    flashAndGo(e, 'rgba(0,255,231,0.25)', 'https://is.gd/M4ryS0L'));
+  document.getElementById('link-lt').addEventListener('click', e =>
+    flashAndGo(e, 'rgba(212,175,55,0.2)', 'https://is.gd/Letrario'));
+  document.getElementById('link-fm').addEventListener('click', e =>
+    flashAndGo(e, 'rgba(44,44,110,0.15)', 'https://is.gd/Shapes'));
+
+  // ─── TYPO ANIMACIÓN FORMAS ────────────────────────────────────────────
+  const formasTitle    = document.getElementById('formas-title');
+  const formasSubtitle = formasTitle.nextElementSibling;
+
+  const sequence = [
+    // [acción, delay_ms]
+    // Escribe "Fotmas" (error: t en vez de r)
+    { type: 'write', text: 'F',      delay: 400  },
+    { type: 'write', text: 'o',      delay: 150  },
+    { type: 'write', text: 't',      delay: 140  }, // ← error
+    { type: 'write', text: 'm',      delay: 130  },
+    { type: 'write', text: 'a',      delay: 120  },
+    { type: 'write', text: 's',      delay: 120  },
+    // Pausa, como si se diera cuenta
+    { type: 'pause',                 delay: 600  },
+    // Borra 4 caracteres: s, a, m, t
+    { type: 'delete',                delay: 100  },
+    { type: 'delete',                delay: 100  },
+    { type: 'delete',                delay: 100  },
+    { type: 'delete',                delay: 110  },
+    // Pausa breve antes de corregir
+    { type: 'pause',                 delay: 200  },
+    // Escribe "rmas" correcto
+    { type: 'write', text: 'r',      delay: 130  },
+    { type: 'write', text: 'm',      delay: 120  },
+    { type: 'write', text: 'a',      delay: 120  },
+    { type: 'write', text: 's',      delay: 120  },
+    // Muestra subtítulo
+    { type: 'subtitle',              delay: 400  },
+  ];
+
+  let current = '';
+  let i = 0;
+
+  function runSequence() {
+    if (i >= sequence.length) return;
+    const step = sequence[i++];
+    setTimeout(() => {
+      if (step.type === 'write') {
+        current += step.text;
+        formasTitle.textContent = current;
+      } else if (step.type === 'delete') {
+        current = current.slice(0, -1);
+        formasTitle.textContent = current;
+      } else if (step.type === 'subtitle') {
+        formasSubtitle.style.opacity = '1';
+      }
+      runSequence();
+    }, step.delay);
+  }
+
+  runSequence();
+  const digits  = '0123456789ABCDEF';
+  const symbols = ['■','□','▪','▫','◆','◇'];
+  const ambients = [
+    { el: document.getElementById('amb1'), base: () => Array.from({length:6}, ()=>Math.floor(Math.random()*10)).join(' · ') },
+    { el: document.getElementById('amb2'), base: () => Array.from({length:8}, ()=>symbols[Math.floor(Math.random()*symbols.length)]).join(' ') },
+    { el: document.getElementById('amb3'), base: () => ['0x','0x','0x'].map(()=>'0x'+digits[Math.floor(Math.random()*16)]+digits[Math.floor(Math.random()*16)]).join(' · ') },
+    { el: document.getElementById('amb4'), base: () => ['≠','≡','∅','∞','≥','≤','∑','∆'][Math.floor(Math.random()*5)] + ' ' + ['≠','≡','∅','∞','≥','≤'][Math.floor(Math.random()*6)] + ' ' + ['∅','∞','≥'][Math.floor(Math.random()*3)] }
+  ];
+
+  setInterval(() => {
+    ambients.forEach(a => {
+      if (Math.random() < 0.4) a.el.textContent = a.base();
+    });
+  }, 1200);
+
+  // ─── PARTÍCULAS DORADAS (Letrario) ────────────────────────────────────
+  const container = document.getElementById('particles-container');
+  function spawnParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 2 + Math.random() * 3;
+    p.style.width  = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left   = (5 + Math.random() * 90) + '%';
+    p.style.bottom = (Math.random() * 60) + '%';
+    p.style.setProperty('--dx', (Math.random() * 40 - 20) + 'px');
+    const dur = 3 + Math.random() * 4;
+    p.style.animationDuration = dur + 's';
+    p.style.animationDelay   = '0s';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000);
+  }
+  setInterval(spawnParticle, 400);
+  for (let i = 0; i < 8; i++) setTimeout(spawnParticle, i * 200);
+
+</script>
+</body>
+</html>
